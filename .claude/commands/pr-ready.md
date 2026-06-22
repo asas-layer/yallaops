@@ -9,8 +9,6 @@ description: Check if the current branch is ready to open a PR
 - Changed files: !`git diff main --name-only`
 - Full diff: !`git diff main`
 - Commits on this branch: !`git log main..HEAD --oneline`
-- Test output: !`cd core && go test ./... 2>&1 | tail -30`
-- Lint output: !`cd core && golangci-lint run ./... 2>&1 | tail -20`
 
 ## Task
 
