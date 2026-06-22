@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package yallaops.release.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/yallaops/yallaops/core/internal/gen/release/v1;releasev1";
+
+enum ReleaseStatus {
+  RELEASE_STATUS_UNSPECIFIED = 0;
+  RELEASE_STATUS_DRAFT = 1;
+  RELEASE_STATUS_RUNNING = 2;
+  RELEASE_STATUS_DEPLOYED = 3;
+  RELEASE_STATUS_FAILED = 4;
+}
+
+message Release {
+  string id = 1;
+  string service = 2;
+  string version = 3;
+  ReleaseStatus status = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreateReleaseRequest {
+  string service = 1;
+  string version = 2;
+}
+
+message CreateReleaseResponse {
+  Release release = 1;
+}
+
+message GetReleaseRequest {
+  string id = 1;
+}
+
+message GetReleaseResponse {
+  Release release = 1;
+}
+
+message ListReleasesRequest {
+  string service = 1;
+  int32 page_size = 2;
+  string page_token = 3;
+}
+
+message ListReleasesResponse {
+  repeated Release releases = 1;
+  string next_page_token = 2;
+}
+
+message UpdateReleaseStatusRequest {
+  string id = 1;
+  ReleaseStatus status = 2;
+}
+
+message UpdateReleaseStatusResponse {
+  Release release = 1;
+}
+
+service ReleaseService {
+  rpc CreateRelease(CreateReleaseRequest) returns (CreateReleaseResponse);
+  rpc GetRelease(GetReleaseRequest) returns (GetReleaseResponse);
+  rpc ListReleases(ListReleasesRequest) returns (ListReleasesResponse);
+  rpc UpdateReleaseStatus(UpdateReleaseStatusRequest) returns (UpdateReleaseStatusResponse);
+}

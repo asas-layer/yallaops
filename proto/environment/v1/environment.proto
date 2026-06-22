@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package yallaops.environment.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/yallaops/yallaops/core/internal/gen/environment/v1;environmentv1";
+
+enum EnvironmentStatus {
+  ENVIRONMENT_STATUS_UNSPECIFIED = 0;
+  ENVIRONMENT_STATUS_PENDING = 1;
+  ENVIRONMENT_STATUS_DEPLOYING = 2;
+  ENVIRONMENT_STATUS_DEPLOYED = 3;
+  ENVIRONMENT_STATUS_FAILED = 4;
+  ENVIRONMENT_STATUS_BLOCKED = 5;
+}
+
+message Environment {
+  string id = 1;
+  string release_id = 2;
+  string env_name = 3;
+  EnvironmentStatus status = 4;
+  google.protobuf.Timestamp deployed_at = 5;
+}
+
+message GetEnvironmentRequest {
+  string release_id = 1;
+  string env_name = 2;
+}
+
+message GetEnvironmentResponse {
+  Environment environment = 1;
+}
+
+message ListEnvironmentsRequest {
+  string release_id = 1;
+}
+
+message ListEnvironmentsResponse {
+  repeated Environment environments = 1;
+}
+
+message PromoteReleaseRequest {
+  string release_id = 1;
+  string target_env = 2;
+}
+
+message PromoteReleaseResponse {
+  Environment environment = 1;
+}
+
+service EnvironmentService {
+  rpc GetEnvironment(GetEnvironmentRequest) returns (GetEnvironmentResponse);
+  rpc ListEnvironments(ListEnvironmentsRequest) returns (ListEnvironmentsResponse);
+  rpc PromoteRelease(PromoteReleaseRequest) returns (PromoteReleaseResponse);
+}
