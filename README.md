@@ -44,7 +44,7 @@ You do not deploy directly. You promote **releases**.
 ## Architecture
 
 ```
-CLI (Python)  ──gRPC──▶  Go Control Plane
+CLI (Go)      ──gRPC──▶  Go Control Plane
                                │
               ┌────────────────┼────────────────┐
               │                │                │
@@ -64,7 +64,8 @@ Kubernetes  Compose   Swarm
 | Layer | Technology |
 |---|---|
 | Core | Go |
-| CLI + AI generator | Python |
+| CLI | Go |
+| AI generator | Python |
 | Runtime agent | Rust (Phase 4) |
 | API | gRPC + protobuf |
 | Database | PostgreSQL (sqlc + pgx) |
@@ -82,7 +83,7 @@ YallaOps is in active early development. Current phase: **Phase 1 — core relea
 |---|---|---|
 | 0 — Repo + tooling | ✅ Done | Monorepo structure, CI, proto setup |
 | 1 — Release engine | 🔄 In progress | Go core, Postgres, gRPC API |
-| 2 — CLI | ⏳ Planned | Python CLI, create/promote/status |
+| 2 — CLI | ⏳ Planned | Go CLI, create/promote/status |
 | 3 — K8s deployment | ⏳ Planned | client-go, Helm, rollout tracking |
 | 4 — Approvals + notifications | ⏳ Planned | Approval workflow, Slack, Redis events |
 | 5 — Docker Compose + Swarm | ⏳ Planned | Multi-runtime support |
@@ -96,9 +97,9 @@ YallaOps is in active early development. Current phase: **Phase 1 — core relea
 ### Prerequisites
 
 - Go 1.23+
-- Python 3.12+
+- Python 3.12+ (for the AI generator, Phase 5)
 - Docker + Docker Compose
-- `protoc` + Go and Python protobuf plugins
+- `protoc` + Go protobuf plugins
 - `buf` (protobuf toolchain)
 - `sqlc` (SQL → Go code generation)
 
@@ -118,10 +119,10 @@ just migrate
 # Start the Go control plane
 just dev-core
 
-# In another terminal, use the CLI
+# In another terminal, build and use the CLI
 cd cli
-pip install -e .
-yallaops status
+go build -o yallaops ./cmd/yallaops
+./yallaops status
 ```
 
 ### Run with Docker
@@ -152,8 +153,13 @@ yallaops/
 ├── agent/                 # Rust — runtime agent
 │   └── src/
 │
-├── cli/                   # Python — CLI tool
-│   └── yallaops/
+├── cli/                   # Go — CLI tool
+│   ├── cmd/yallaops/      # CLI entrypoint (Cobra root command)
+│   ├── internal/
+│   │   ├── commands/      # create, promote, status, dashboard
+│   │   ├── client/        # gRPC client wrapper
+│   │   └── config/        # ~/.yallaops/config.yaml handling
+│   └── go.mod
 │
 ├── ai-generator/          # Python — LLM deployment config generator
 │
@@ -183,7 +189,7 @@ YallaOps is open source and welcomes contributions. Please read [CONTRIBUTING.md
 
 **PR rules:**
 - Squash merge only
-- Must pass CI (Go tests, Python tests, proto lint)
+- Must pass CI (Go tests, proto lint)
 - One logical change per PR
 
 ---

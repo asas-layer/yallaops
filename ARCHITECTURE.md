@@ -38,13 +38,13 @@ You do not deploy directly. You promote releases.
 
 ## 3. Repository structure
 
-YallaOps is a **monorepo**. Three runtimes (Go, Python, Rust) share the same repository because they are tightly coupled at the API boundary. The `proto/` directory is the contract between all of them.
+YallaOps is a **monorepo**. Go, Rust, and Python share the same repository because they are tightly coupled at the API boundary. The `proto/` directory is the contract between all of them.
 
 ```
 yallaops/
 ├── core/              # Go — control plane (the brain)
 ├── agent/             # Rust — runtime agent (Phase 4)
-├── cli/               # Python — CLI tool
+├── cli/               # Go — CLI tool
 ├── ai-generator/      # Python — LLM deployment generator (Phase 5)
 ├── proto/             # Protobuf definitions — source of truth for all APIs
 ├── infra/             # K8s manifests, Helm charts for deploying YallaOps itself
@@ -80,22 +80,24 @@ yallaops/
 
 ---
 
-### 4.2 Python — CLI and AI generator
+### 4.2 Go — CLI
 
-**Decision:** Python for the CLI tool and AI deployment generator.
+**Decision:** Go for the CLI tool, matching the control plane.
 
 **Reasons:**
-- `typer` gives a clean CLI interface with minimal boilerplate
-- `grpcio` + `grpcio-tools` generate client stubs from the same `.proto` files as Go — always in sync
-- LLM integration (for the AI generator) is most mature in Python
-- Fast to iterate on — CLI commands change frequently during early dev
+- Compiles to a single static binary — no runtime or dependency installation required for end users (unlike a Python CLI, which needs an interpreter and a venv)
+- `google.golang.org/grpc` client stubs are generated from the same `.proto` files and the same `buf` toolchain already used for the control plane — no separate codegen pipeline
+- Matches the existing convention in this repo: Go control plane, Rust agent — operational tooling here is compiled binaries, not interpreted scripts
+- `cobra` gives kubectl/argocd-style command structure for free; `bubbletea` + `lipgloss` support an interactive TUI dashboard in the same binary
 
 **Key libraries:**
-- `typer` — CLI framework
-- `httpx` — HTTP client (for health checks and webhooks)
-- `grpcio` + `grpcio-tools` — gRPC client
-- `rich` — terminal output formatting
-- `pydantic` — config validation
+- `github.com/spf13/cobra` — command structure
+- `github.com/charmbracelet/bubbletea` — interactive TUI (dashboard subcommand)
+- `github.com/charmbracelet/lipgloss` — TUI styling and themes
+- `google.golang.org/grpc` — gRPC client
+- `gopkg.in/yaml.v3` — config file parsing (`~/.yallaops/config.yaml`)
+
+**AI generator:** Python remains the language for the AI deployment generator (Phase 5) — LLM integration is most mature there. This is unrelated to the CLI decision above.
 
 ---
 
@@ -117,14 +119,14 @@ yallaops/
 **Decision:** gRPC with protobuf from day one for all API communication.
 
 **Reasons:**
-- Proto files in `proto/` are the single source of truth — Go server and Python CLI both generate from the same definitions, so they are always in sync by construction
+- Proto files in `proto/` are the single source of truth — the Go server and the Go CLI both generate from the same definitions, so they are always in sync by construction
 - Strongly typed — no stringly-typed REST JSON to maintain
 - Bidirectional streaming — useful for log tailing and real-time deployment status
 - Future web UI can use gRPC-Web or a lightweight REST gateway
 
 **What this means in practice:**
 - Every new API endpoint starts as a `.proto` definition, not a Go handler
-- Run `buf generate` to regenerate Go and Python stubs after any proto change
+- Run `buf generate` to regenerate Go stubs (server + CLI client) after any proto change
 - Never bypass gRPC with direct function calls between CLI and core — keep the boundary clean
 
 **No REST API.** If a REST endpoint is needed for webhooks or health checks, add a thin HTTP handler in `core/cmd/server/` that does not duplicate business logic.
