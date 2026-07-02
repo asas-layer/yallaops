@@ -1,3 +1,31 @@
+CLAUDE.local.md
+
+# Go
+/core/bin/
+*.test
+coverage.out
+*.out
+
+# Go — CLI
 /cli/yallaops
 /cli/dist/
-CLAUDE.local.md
+
+# Python
+__pycache__/
+.venv/
+*.pyc
+*.pyo
+dist/
+*.egg-info/
+.ruff_cache/
+
+# Rust (agent — Phase 4)
+target/
+
+# General
+.env
+.DS_Store
+*.log
+
+# Generated (sqlc output — uncomment if you prefer not to commit generated code)
+# core/internal/store/*.go
