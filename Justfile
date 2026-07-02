@@ -27,11 +27,17 @@ migrate-down:
 dev-core:
     cd core && go run ./cmd/server
 
+# Build the CLI binary
+build-cli:
+    cd cli && go build -o yallaops ./cmd/yallaops
+
 # Run all tests
 test:
     cd core && go test ./...
+    cd cli && go test ./...
 
 # Run linters
 lint:
     cd core && golangci-lint run ./...
+    cd cli && golangci-lint run ./...
     buf lint

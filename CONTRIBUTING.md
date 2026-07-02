@@ -17,7 +17,7 @@ First off — thanks for taking the time to contribute. YallaOps is early-stage 
 ### Prerequisites
 
 - Go 1.23+
-- Python 3.12+
+- Python 3.12+ (for the AI generator, Phase 5)
 - Docker + Docker Compose
 - `buf` — protobuf toolchain (`brew install bufbuild/buf/buf` or see [buf.build](https://buf.build/docs/installation))
 - `sqlc` — SQL code generation (`go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest`)
@@ -40,9 +40,9 @@ just migrate
 # 4. Start the gRPC server
 just dev-core
 
-# 5. Install the CLI (in another terminal)
-cd cli && pip install -e .
-yallaops status
+# 5. Build and run the CLI (in another terminal)
+cd cli && go build -o yallaops ./cmd/yallaops
+./yallaops status
 ```
 
 If `yallaops status` returns a response, you're good to go.
@@ -75,7 +75,7 @@ Keep branch names short and lowercase: `feat/release-state-machine`, not `feat/A
 
 A few hard rules:
 
-- **Proto first** — if your change touches the API, define it in `proto/` before writing Go or Python code. Run `buf generate` to regenerate stubs.
+- **Proto first** — if your change touches the API, define it in `proto/` before writing Go code. Run `buf generate` to regenerate stubs (server and CLI client).
 - **No ORMs** — all database access goes through sqlc-generated functions. No raw SQL strings in Go code.
 - **No REST** — the API is gRPC only (except `GET /healthz`).
 - **Tests required** — new Go code needs table-driven tests. PRs without tests will be asked to add them.
@@ -88,8 +88,8 @@ See `ARCHITECTURE.md` for the full list of technical decisions and constraints.
 Before pushing, make sure everything passes:
 
 ```bash
-just lint      # golangci-lint + ruff + buf lint
-just test      # go test ./... + python tests
+just lint      # golangci-lint (core + cli) + buf lint
+just test      # go test ./... (core + cli)
 just proto     # buf generate (if you changed any .proto files)
 just sqlc      # sqlc generate (if you changed any query files)
 ```
@@ -183,7 +183,7 @@ The project follows a phased roadmap — see `ARCHITECTURE.md` section 4 and `do
 ```
 core/          Go — gRPC control plane, release engine, Postgres, Redis
 agent/         Rust — runtime agent (Phase 4, not started)
-cli/           Python — CLI tool
+cli/           Go — CLI tool
 ai-generator/  Python — LLM config generator (Phase 5, not started)
 proto/         Protobuf definitions — source of truth for all APIs
 infra/         K8s manifests and Helm charts
